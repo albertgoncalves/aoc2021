@@ -1,0 +1,8 @@
+*
+!.gitignore
+!*.nix
+!.shellhook
+!data/
+!*.txt
+!src/
+!*.hs
