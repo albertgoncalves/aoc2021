@@ -45,7 +45,7 @@ moves :: ReadP [Move]
 moves = sepBy1 move skipSpaces <* skipSpaces
 
 parse :: String -> [Move]
-parse = head . map fst . readP_to_S (moves <* eof)
+parse = fst . head . readP_to_S (moves <* eof)
 
 part1 :: Move -> Position
 part1 (Move Forward n) = Position n 0 0
