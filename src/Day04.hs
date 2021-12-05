@@ -18,7 +18,6 @@ import Prelude hiding (lookup, sequence)
 type Board = Map Int (Int, Int)
 
 data Game = Game [Int] [Board]
-  deriving (Show)
 
 integer :: ReadP Int
 integer = read <$> munch1 isDigit
@@ -68,21 +67,30 @@ score xs b = sum (keys $ foldr delete b xs) * last xs
 winners :: [Int] -> [Board] -> [(Board, [(Int, Int)])]
 winners xs bs = filter (isWinner . snd) $ zip bs (map (mark xs) bs)
 
-part1 :: Game -> Int
-part1 (Game xs bs) = head $ mapMaybe f [1 ..]
+part1 :: Int -> Game -> Int
+part1 n (Game xs bs) = head $ mapMaybe f [n ..]
   where
-    f n = case winners xs' bs of
+    f n' = case winners xs' bs of
       [(b, _)] -> Just $ score xs' b
       [] -> Nothing
       _ -> undefined
       where
-        xs' = take n xs
+        xs' = take n' xs
 
 part2 :: Game -> Int
-part2 = undefined
+part2 (Game xs bs) = loop 1 bs
+  where
+    loop :: Int -> [Board] -> Int
+    loop n bs'@[_] = part1 n (Game xs bs')
+    loop n bs' =
+      loop (n + 1) $
+        map fst $
+          filter (not . isWinner . snd) $
+            zip bs' $
+              map (mark (take n xs)) bs'
 
 inject :: (Game -> Int) -> String -> String
 inject f = show . f . parse
 
 main :: IO ()
-main = interact (\x -> unlines $ map (`inject` x) [part1, part2])
+main = interact (\x -> unlines $ map (`inject` x) [part1 1, part2])
