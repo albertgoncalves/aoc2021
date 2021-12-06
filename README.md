@@ -8,10 +8,11 @@ Needed things
 
 Quick start
 ---
-```
+```bash
 $ nix-shell
-[nix-shell:path/to/aoc2021]$ ls -l src/ data/
-[nix-shell:path/to/aoc2021]$ lint src/Day01.hs
-[nix-shell:path/to/aoc2021]$ run src/Day01.hs data/01_0.txt
-[nix-shell:path/to/aoc2021]$ run src/Day01.hs data/01_1.txt
+[nix-shell:path/to/aoc2021]$ for i in $(seq -f "%02g" 1 6); do
+[nix-shell:path/to/aoc2021]$     lint "src/Day${i}.hs"
+[nix-shell:path/to/aoc2021]$     run "src/Day${i}.hs" "data/${i}_0.txt"
+[nix-shell:path/to/aoc2021]$     run "src/Day${i}.hs" "data/${i}_1.txt"
+[nix-shell:path/to/aoc2021]$ done
 ```
