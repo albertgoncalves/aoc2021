@@ -1,7 +1,7 @@
 import Data.Char (isDigit)
 import Data.Function (on)
+import Data.IntMap (IntMap, delete, fromList, keys, lookup)
 import Data.List (groupBy, sort, sortBy)
-import Data.Map (Map, delete, fromList, keys, lookup)
 import Data.Maybe (mapMaybe)
 import Text.ParserCombinators.ReadP
   ( ReadP,
@@ -15,7 +15,7 @@ import Text.ParserCombinators.ReadP
   )
 import Prelude hiding (lookup, sequence)
 
-type Board = Map Int (Int, Int)
+type Board = IntMap (Int, Int)
 
 data Game = Game [Int] [Board]
 
