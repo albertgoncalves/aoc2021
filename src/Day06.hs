@@ -1,13 +1,5 @@
 import Data.Char (isDigit)
-import Data.Map
-  ( Map,
-    elems,
-    empty,
-    foldrWithKey,
-    fromList,
-    insertWith,
-    unionWith,
-  )
+import Data.IntMap (IntMap, assocs, elems, fromListWith)
 import Text.ParserCombinators.ReadP
   ( char,
     eof,
@@ -24,22 +16,27 @@ parse =
     . readP_to_S
       (sepBy1 (read <$> munch1 isDigit) (char ',') <* skipSpaces <* eof)
 
-intoMap :: [Int] -> Map Int Int
-intoMap xs = foldr (uncurry (insertWith (+))) empty $ zip xs (repeat 1)
+merge :: [(Int, Int)] -> IntMap Int
+merge = fromListWith (+)
 
-step :: Map Int Int -> Map Int Int
-step = foldrWithKey f empty
+step :: IntMap Int -> IntMap Int
+step = merge . concatMap (uncurry f) . assocs
   where
-    f :: Int -> Int -> Map Int Int -> Map Int Int
-    f k v m =
-      unionWith (+) m $
-        fromList $
-          if k == 0
-            then [(6, v), (8, v)]
-            else [(k - 1, v)]
+    f :: Int -> Int -> [(Int, Int)]
+    f k v
+      | k == 0 = [(6, v), (8, v)]
+      | otherwise = [(k - 1, v)]
 
 inject :: Int -> String -> String
-inject n = show . sum . elems . (!! n) . iterate step . intoMap . parse
+inject n =
+  show
+    . sum
+    . elems
+    . (!! n)
+    . iterate step
+    . merge
+    . (`zip` repeat 1)
+    . parse
 
 main :: IO ()
 main = interact (\x -> unlines $ map (`inject` x) [80, 256])
