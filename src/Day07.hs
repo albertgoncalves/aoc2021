@@ -8,7 +8,6 @@ import Text.ParserCombinators.ReadP
     sepBy1,
     skipSpaces,
   )
-import Prelude hiding (lookup)
 
 parse :: String -> [Int]
 parse =
