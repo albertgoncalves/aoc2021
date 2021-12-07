@@ -39,7 +39,7 @@ span x0 x1
   | otherwise = repeat x0
 
 intoMap :: [Coord] -> Map Coord Int
-intoMap xs = fromListWith (+) $ zip xs (repeat 1)
+intoMap = fromListWith (+) . (`zip` repeat 1)
 
 part1 :: Line -> [Coord]
 part1 (Line (Coord x0 y0) (Coord x1 y1))
