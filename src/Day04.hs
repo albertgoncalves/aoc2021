@@ -17,8 +17,6 @@ import Prelude hiding (lookup, sequence)
 
 type Board = IntMap (Int, Int)
 
-data Game = Game [Int] [Board]
-
 integer :: ReadP Int
 integer = read <$> munch1 isDigit
 
@@ -47,9 +45,9 @@ board = intoBoard <$> many1 (many1 (spaces *> integer) <* newline)
 boards :: ReadP [Board]
 boards = sepBy1 board newline
 
-parse :: String -> Game
+parse :: String -> ([Int], [Board])
 parse =
-  fst . head . readP_to_S (Game <$> (sequence <* newlines) <*> (boards <* eof))
+  fst . head . readP_to_S ((,) <$> (sequence <* newlines) <*> (boards <* eof))
 
 mark :: [Int] -> Board -> [(Int, Int)]
 mark xs b = mapMaybe (`lookup` b) xs
@@ -67,8 +65,8 @@ score xs b = sum (keys $ foldr delete b xs) * last xs
 winners :: [Int] -> [Board] -> [(Board, [(Int, Int)])]
 winners xs bs = filter (isWinner . snd) $ zip bs (map (mark xs) bs)
 
-part1 :: Int -> Game -> Int
-part1 n (Game xs bs) = head $ mapMaybe f [n ..]
+part1 :: Int -> [Int] -> [Board] -> Int
+part1 n xs bs = head $ mapMaybe f [n ..]
   where
     f n' = case winners xs' bs of
       [(b, _)] -> Just $ score xs' b
@@ -77,20 +75,20 @@ part1 n (Game xs bs) = head $ mapMaybe f [n ..]
       where
         xs' = take n' xs
 
-part2 :: Game -> Int
-part2 (Game xs bs) = loop 1 bs
+part2 :: [Int] -> [Board] -> Int
+part2 xs = loop 1
   where
     loop :: Int -> [Board] -> Int
-    loop n bs'@[_] = part1 n (Game xs bs')
-    loop n bs' =
+    loop n bs@[_] = part1 n xs bs
+    loop n bs =
       loop (n + 1) $
         map fst $
           filter (not . isWinner . snd) $
-            zip bs' $
-              map (mark (take n xs)) bs'
+            zip bs $
+              map (mark (take n xs)) bs
 
-inject :: (Game -> Int) -> String -> String
-inject f = show . f . parse
+inject :: ([Int] -> [Board] -> Int) -> String -> String
+inject f = show . uncurry f . parse
 
 main :: IO ()
 main = interact (\x -> unlines $ map (`inject` x) [part1 1, part2])
