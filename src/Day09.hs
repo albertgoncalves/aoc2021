@@ -1,7 +1,8 @@
 import Data.Char (isDigit, ord)
-import Data.List (nub, sortBy)
+import Data.List (sortBy)
 import Data.Map (Map, fromList, keys, lookup, (!))
 import Data.Maybe (mapMaybe)
+import Data.Set (Set, empty, insert, member)
 import Text.ParserCombinators.ReadP
   ( ReadP,
     char,
@@ -58,19 +59,27 @@ higherNeighbors m c =
     ns = neighbors c
     x = m ! c
 
-searchUp :: Map Coord Int -> Coord -> [Coord]
-searchUp m c =
-  case lookup c m of
-    Nothing -> []
-    Just 9 -> []
-    _ -> c : concatMap (searchUp m) (higherNeighbors m c)
+searchUp :: Set Coord -> Map Coord Int -> Coord -> (Set Coord, [Coord])
+searchUp s m c
+  | member c s = (s, [])
+  | otherwise =
+    case lookup c m of
+      Nothing -> (s', [])
+      Just 9 -> (s', [])
+      _ ->
+        foldr
+          (\c'' (s'', cs) -> (cs ++) <$> searchUp s'' m c'')
+          (s', [c])
+          (higherNeighbors m c)
+  where
+    s' = insert c s
 
 part2 :: Map Coord Int -> Int
 part2 m =
   product $
     take 3 $
       sortBy (flip compare) $
-        map (length . nub . searchUp m) $
+        map (length . snd . searchUp empty m) $
           lowest m
 
 inject :: (Map Coord Int -> Int) -> String -> String
