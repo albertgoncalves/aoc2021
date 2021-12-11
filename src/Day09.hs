@@ -14,7 +14,7 @@ import Text.ParserCombinators.ReadP
 import Prelude hiding (lookup)
 
 data Coord = Coord Int Int
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
 
 newline :: ReadP Char
 newline = char '\n'
