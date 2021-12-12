@@ -16,11 +16,8 @@ import Prelude hiding (lookup)
 data Coord = Coord Int Int
   deriving (Eq, Ord)
 
-newline :: ReadP Char
-newline = char '\n'
-
 digits :: ReadP [Int]
-digits = map (subtract (ord '0') . ord) <$> munch1 isDigit <* newline
+digits = map (subtract (ord '0') . ord) <$> munch1 isDigit <* char '\n'
 
 parse :: String -> [[Int]]
 parse = fst . head . readP_to_S (many1 digits <* eof)
