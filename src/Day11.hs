@@ -63,7 +63,7 @@ part1 :: Array Coord Int -> Int
 part1 = snd . (!! 100) . loop
 
 part2 :: Array Coord Int -> Int
-part2 = length . takeWhile (not . all (== 0) . elems) . map fst . loop
+part2 = length . takeWhile (any (/= 0) . elems . fst) . loop
 
 inject :: (Array Coord Int -> Int) -> String -> String
 inject f = show . f . intoArray . parse
