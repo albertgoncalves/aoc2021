@@ -1,7 +1,7 @@
 import Control.Applicative ((<|>))
 import Data.Char (isLower, isUpper)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.Tuple (swap)
 import Text.ParserCombinators.ReadP
@@ -13,6 +13,7 @@ import Text.ParserCombinators.ReadP
     readP_to_S,
     string,
   )
+import Prelude hiding (lookup)
 
 data Node
   = Start
@@ -46,22 +47,19 @@ edge = (,) <$> (node <* char '-') <*> node
 parse :: String -> [Edge]
 parse = fst . head . readP_to_S (many1 (edge <* char '\n') <* eof)
 
-bothWays :: [(a, a)] -> [(a, a)]
-bothWays xs = xs ++ map swap xs
-
 graph :: [Edge] -> Graph
-graph = M.fromListWith S.union . map (S.singleton <$>) . mapMaybe f . bothWays
-  where
-    f (_, Start) = Nothing
-    f (End, _) = Nothing
-    f x = Just x
+graph xs =
+  M.fromListWith S.union $
+    map (S.singleton <$>) $
+      filter (\x -> fst x /= End && snd x /= Start) $
+        xs ++ map swap xs
 
 isSmall :: Node -> Bool
 isSmall (Small _) = True
 isSmall _ = False
 
-connectedTo :: Node -> Graph -> S.Set Node
-connectedTo n g = fromMaybe S.empty $ n `M.lookup` g
+lookup :: Node -> Graph -> S.Set Node
+lookup n = fromMaybe S.empty . M.lookup n
 
 from :: Node -> [[Node]] -> [[Node]]
 from n = map (n :)
@@ -72,9 +70,7 @@ part1 g = loop S.empty Start
     loop :: S.Set Node -> Node -> [[Node]]
     loop _ End = [[End]]
     loop s n =
-      concatMap (from n . loop s') $
-        S.toList $
-          S.difference (connectedTo n g) s
+      concatMap (from n . loop s') $ S.toList $ S.difference (lookup n g) s
       where
         s' = if isSmall n then S.insert n s else s
 
@@ -89,7 +85,7 @@ part2 g = loop M.empty Start
     loop :: M.Map Node Int -> Node -> [[Node]]
     loop _ End = [[End]]
     loop m n =
-      concatMap (from n . loop m') $ S.toList $ trim m' $ connectedTo n g
+      concatMap (from n . loop m') $ S.toList $ trim m' $ lookup n g
       where
         m' = if isSmall n then M.insertWith (+) n 1 m else m
 
