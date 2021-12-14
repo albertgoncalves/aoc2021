@@ -58,39 +58,32 @@ isSmall :: Node -> Bool
 isSmall (Small _) = True
 isSmall _ = False
 
-lookup :: Node -> Graph -> S.Set Node
-lookup n = fromMaybe S.empty . M.lookup n
-
-from :: Node -> [[Node]] -> [[Node]]
-from n = map (n :)
-
-part1 :: Graph -> [[Node]]
-part1 g = loop S.empty Start
+paths ::
+  (M.Map Node Int -> S.Set Node -> S.Set Node) ->
+  Graph ->
+  M.Map Node Int ->
+  Node ->
+  [[Node]]
+paths _ _ _ End = [[End]]
+paths f g m n =
+  concatMap (map (n :) . paths f g m') $
+    S.toList $
+      f m' $
+        fromMaybe S.empty $
+          M.lookup n g
   where
-    loop :: S.Set Node -> Node -> [[Node]]
-    loop _ End = [[End]]
-    loop s n =
-      concatMap (from n . loop s') $ S.toList $ S.difference (lookup n g) s
-      where
-        s' = if isSmall n then S.insert n s else s
+    m' = if isSmall n then M.insertWith (+) n 1 m else m
 
-trim :: M.Map Node Int -> S.Set Node -> S.Set Node
-trim m s
+part1 :: S.Set Node -> M.Map Node Int -> S.Set Node
+part1 s = S.difference s . S.fromList . M.keys
+
+part2 :: M.Map Node Int -> S.Set Node -> S.Set Node
+part2 m s
   | elem 2 $ M.elems m = S.difference s (S.fromList $ M.keys m)
   | otherwise = s
 
-part2 :: Graph -> [[Node]]
-part2 g = loop M.empty Start
-  where
-    loop :: M.Map Node Int -> Node -> [[Node]]
-    loop _ End = [[End]]
-    loop m n =
-      concatMap (from n . loop m') $ S.toList $ trim m' $ lookup n g
-      where
-        m' = if isSmall n then M.insertWith (+) n 1 m else m
-
-inject :: (Graph -> [[Node]]) -> String -> String
-inject f = show . length . f . graph . parse
+inject :: (M.Map Node Int -> S.Set Node -> S.Set Node) -> String -> String
+inject f = show . length . (\g -> paths f g M.empty Start) . graph . parse
 
 main :: IO ()
-main = interact (\x -> unlines $ map (`inject` x) [part1, part2])
+main = interact (\x -> unlines $ map (`inject` x) [flip part1, part2])
