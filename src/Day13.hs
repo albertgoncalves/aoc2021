@@ -1,6 +1,7 @@
 import Control.Applicative ((<|>))
 import Data.Char (isDigit)
-import Data.Set (Set, partition)
+import Data.List (foldl', intercalate)
+import qualified Data.Set as S
 import Text.ParserCombinators.ReadP
   ( ReadP,
     char,
@@ -12,7 +13,7 @@ import Text.ParserCombinators.ReadP
   )
 
 data Coord = Coord Int Int
-  deriving (Show)
+  deriving (Eq, Ord)
 
 data Axis
   = Horizontal
@@ -47,13 +48,31 @@ parse :: String -> ([Coord], [Fold])
 parse =
   fst . head . readP_to_S ((,) <$> (coords <* newline) <*> (folds <* eof))
 
-fold :: Fold -> Set Coord -> Set Coord
-fold (Fold Horizontal x) s = undefined
+fold :: S.Set Coord -> Fold -> S.Set Coord
+fold s (Fold Horizontal x) =
+  S.union l $ S.map (\(Coord x' y) -> Coord (x - (x' - x)) y) r
   where
-    (l, r) = partition (\(Coord x' _) -> x' < x) s
-fold (Fold Vertical y) s = undefined
+    (l, r) = S.partition (\(Coord x' _) -> x' < x) s
+fold s (Fold Vertical y) =
+  S.union l $ S.map (\(Coord x y') -> Coord x $ y - (y' - y)) r
   where
-    (l, u) = partition (\(Coord _ y') -> y' < y) s
+    (l, r) = S.partition (\(Coord _ y') -> y' < y) s
+
+part1 :: [Coord] -> [Fold] -> String
+part1 cs = show . length . foldl' fold (S.fromList cs) . take 1
+
+part2 :: [Coord] -> [Fold] -> String
+part2 cs fs =
+  intercalate
+    "\n"
+    [ [if S.member (Coord x y) s then '.' else ' ' | x <- [0 .. 38]]
+      | y <- [0 .. 5]
+    ]
+  where
+    s = foldl' fold (S.fromList cs) fs
+
+inject :: ([Coord] -> [Fold] -> String) -> String -> String
+inject f = uncurry f . parse
 
 main :: IO ()
-main = interact (show . parse)
+main = interact (\x -> unlines $ map (`inject` x) [part1, part2])
