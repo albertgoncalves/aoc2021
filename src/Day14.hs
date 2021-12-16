@@ -32,22 +32,35 @@ rules = many1 $ rule <* newline
 parse :: String -> (String, [((Char, Char), Char)])
 parse = fst . head . readP_to_S ((,) <$> (chars <* newline) <*> (rules <* eof))
 
-run :: Ord a => Map (a, a) a -> [a] -> [a]
-run _ [] = []
-run _ [x] = [x]
-run m (x0 : xs@(x1 : _)) =
-  maybe [x0] (\x2 -> [x0, x2]) (lookup (x0, x1) m) ++ run m xs
+merge :: (Ord a, Num b) => [(a, b)] -> Map a b
+merge = fromListWith (+)
 
-histogram :: Ord a => [a] -> Map a Int
-histogram xs = fromListWith (+) $ zip xs $ repeat 1
+intoMap :: String -> Map (Char, Char) Int
+intoMap s = merge $ zip (zip s' $ tail s') $ repeat 1
+  where
+    s' = " " ++ s ++ " "
+
+step :: Map (Char, Char) Char -> (Char, Char) -> Int -> [((Char, Char), Int)]
+step m x@(c0, c2) n =
+  maybe [(x, n)] (\c1 -> [((c0, c1), n), ((c1, c2), n)]) (lookup x m)
+
+run :: Map (Char, Char) Char -> [((Char, Char), Int)] -> [((Char, Char), Int)]
+run m = assocs . merge . concatMap (uncurry $ step m)
+
+unpack :: [((Char, Char), Int)] -> [(Char, Int)]
+unpack = map (fmap (`div` 2)) . assocs . merge . concatMap (uncurry f)
+  where
+    f (' ', c) n = [(c, n)]
+    f (c, ' ') n = [(c, n)]
+    f (c0, c1) n = [(c0, n), (c1, n)]
 
 compute :: Int -> String -> Map (Char, Char) Char -> Int
 compute n s m = maximum xs - minimum xs
   where
-    xs = map snd $ assocs $ histogram $ (!! n) $ iterate (run m) s
+    xs = map snd . unpack $ (!! n) $ iterate (run m) $ assocs $ intoMap s
 
 inject :: Int -> String -> String
 inject n = show . uncurry (compute n) . (fromList <$>) . parse
 
 main :: IO ()
-main = interact (\x -> unlines $ map (`inject` x) [10])
+main = interact (\x -> unlines $ map (`inject` x) [10, 40])
