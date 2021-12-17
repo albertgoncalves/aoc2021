@@ -20,13 +20,16 @@ digits = map (subtract (ord '0') . ord) <$> munch1 isDigit <* char '\n'
 parse :: String -> [[Int]]
 parse = fst . head . readP_to_S (many1 digits <* eof)
 
+zero :: Coord
+zero = (0, 0)
+
 enumerate :: [a] -> [(Int, a)]
 enumerate = zip [0 ..]
 
 intoArray :: [[a]] -> Array Coord a
 intoArray rows =
   array
-    ((0, 0), (x, y))
+    (zero, (x, y))
     [((j, i), v) | (i, row) <- enumerate rows, (j, v) <- enumerate row]
   where
     x = length (head rows) - 1
@@ -40,7 +43,7 @@ distance :: Array Coord Int -> Int
 distance a =
   search S.empty $
     M.fromListWith S.union $
-      (0 :: Int, S.singleton (0, 0)) :
+      (0 :: Int, S.singleton zero) :
         [ (maxBound, S.singleton (j, i))
           | j <- [0 .. x],
             i <- [0 .. y],
@@ -78,7 +81,7 @@ tile a n u v =
 
 expand :: Array Coord Int -> Array Coord Int
 expand a =
-  array ((0, 0), (((x + 1) * n) - 1, ((y + 1) * n) - 1)) $
+  array (zero, (((x + 1) * n) - 1, ((y + 1) * n) - 1)) $
     concat [tile a (j + i) j i | i <- take n [0 ..], j <- take n [0 ..]]
   where
     n = 5 :: Int
