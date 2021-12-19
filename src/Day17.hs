@@ -48,8 +48,8 @@ run b@(Bounds (Range lX rX) (Range lY rY)) cs c@(Coord x y) s@(Speed dX _)
 
 possibleX :: Range -> [Int]
 possibleX (Range lX rX)
-  | ((lX < 0) && (rX < 0)) || (rX < lX) = undefined
-  | otherwise = [dX | dX <- [1 .. rX], f dX]
+  | (lX < rX) && (0 < rX) = [dX | dX <- [1 .. rX], f dX]
+  | otherwise = undefined
   where
     f dX =
       any
@@ -60,8 +60,8 @@ possibleX (Range lX rX)
 
 possibleY :: Range -> [Int]
 possibleY (Range lY rY)
-  | rY < lY = undefined
-  | otherwise = [dY | dY <- [lY .. abs lY], f dY]
+  | (lY < rY) && (lY < 0) = [dY | dY <- [lY .. abs lY], f dY]
+  | otherwise = undefined
   where
     f dY =
       any
