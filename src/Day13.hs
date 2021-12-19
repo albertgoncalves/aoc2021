@@ -18,10 +18,8 @@ data Coord = Coord Int Int
 data Axis
   = Horizontal
   | Vertical
-  deriving (Show)
 
 data Fold = Fold Axis Int
-  deriving (Show)
 
 newline :: ReadP Char
 newline = char '\n'
