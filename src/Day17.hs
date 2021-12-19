@@ -40,9 +40,7 @@ step (Coord x y) (Speed dX dY) = (Coord (x + dX) (y + dY), Speed dX' (dY - 1))
 
 run :: Bounds -> [Coord] -> Coord -> Speed -> [Coord]
 run b@(Bounds (Range lX rX) (Range lY rY)) cs c@(Coord x y) s@(Speed dX _)
-  | y < lY = []
-  | (x < lX) && (dX <= 0) = []
-  | (rX < x) && (0 <= dX) = []
+  | (y < lY) || ((x < lX) && (dX <= 0)) || ((rX < x) && (0 <= dX)) = []
   | (lX <= x) && (x <= rX) && (lY <= y) && (y <= rY) = cs'
   | otherwise = uncurry (run b cs') (step c s)
   where
@@ -50,8 +48,7 @@ run b@(Bounds (Range lX rX) (Range lY rY)) cs c@(Coord x y) s@(Speed dX _)
 
 possibleX :: Range -> [Int]
 possibleX (Range lX rX)
-  | (lX < 0) && (rX < 0) = undefined
-  | rX < lX = undefined
+  | ((lX < 0) && (rX < 0)) || (rX < lX) = undefined
   | otherwise = [dX | dX <- [1 .. rX], f dX]
   where
     f dX =
@@ -73,26 +70,23 @@ possibleY (Range lY rY)
             iterate (\(y, dY') -> (y + dY', dY' - 1)) (0, dY)
         )
 
-part1 :: Bounds -> Int
-part1 b@(Bounds rX rY) =
-  maximum $
-    concat $
-      [ map getY $ run b [] (Coord 0 0) (Speed dX dY)
-        | dX <- possibleX rX,
-          dY <- possibleY rY
-      ]
-
-part2 :: Bounds -> Int
-part2 b@(Bounds rX rY) =
-  length $
-    [ (dX, dY)
+sims :: Bounds -> [[Coord]]
+sims b@(Bounds rX rY) =
+  filter
+    (not . null)
+    [ run b [] (Coord 0 0) (Speed dX dY)
       | dX <- possibleX rX,
-        dY <- possibleY rY,
-        not $ null $ run b [] (Coord 0 0) (Speed dX dY)
+        dY <- possibleY rY
     ]
 
-inject :: (Bounds -> Int) -> String -> String
-inject f = show . f . parse
+part1 :: [[Coord]] -> Int
+part1 = maximum . concatMap (map getY)
+
+part2 :: [[Coord]] -> Int
+part2 = length
+
+inject :: ([[Coord]] -> Int) -> String -> String
+inject f = show . f . sims . parse
 
 main :: IO ()
 main = interact (\x -> unlines $ map (`inject` x) [part1, part2])
