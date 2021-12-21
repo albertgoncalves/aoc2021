@@ -1,5 +1,6 @@
 import Control.Applicative ((<|>))
 import Data.Char (isDigit)
+import Data.List (foldl1')
 import Text.ParserCombinators.ReadP
   ( ReadP,
     char,
@@ -12,10 +13,8 @@ import Text.ParserCombinators.ReadP
 data Tree
   = Leaf Int
   | Node Tree Tree
-  deriving (Show)
 
 data Slice = Slice {getDepth :: Int, getValue :: Int}
-  deriving (Show)
 
 integer :: ReadP Int
 integer = read <$> munch1 isDigit
@@ -46,6 +45,8 @@ incr :: Slice -> Slice
 incr (Slice n x) = Slice (n + 1) x
 
 add :: [Slice] -> [Slice] -> [Slice]
+add ls [] = ls
+add [] rs = rs
 add ls rs = map incr ls ++ map incr rs
 
 explode :: [Slice] -> [Slice] -> Either [Slice] [Slice]
@@ -71,16 +72,15 @@ reduce :: [Slice] -> [Slice]
 reduce = either reduce (either reduce id . split []) . explode []
 
 magnitude :: [Slice] -> [Slice] -> Int
-magnitude [] [] = 0
 magnitude [Slice _ x] [] = x
-magnitude ls [] = magnitude [] $ reverse ls
 magnitude ls ((Slice n0 x0) : (Slice n1 x1) : rs)
   | n0 == n1 =
     magnitude [] $ reverse ls ++ Slice (n0 - 1) (x0 * 3 + x1 * 2) : rs
 magnitude ls (r : rs) = magnitude (r : ls) rs
+magnitude _ [] = undefined
 
 part1 :: [[Slice]] -> Int
-part1 = magnitude [] . foldl1 (\xs -> reduce . add xs)
+part1 = magnitude [] . foldl1' (\xs -> reduce . add xs)
 
 part2 :: [[Slice]] -> Int
 part2 xs =
