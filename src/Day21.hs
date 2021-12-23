@@ -11,11 +11,11 @@ import Text.ParserCombinators.ReadP
   )
 import Prelude hiding (lookup)
 
-type Score = Int
+newtype Score = Score {getScore :: Int}
+  deriving (Eq, Ord)
 
-type Position = Int
-
-type Roll = Int
+newtype Position = Position {getPosition :: Int}
+  deriving (Eq, Ord)
 
 data Player = Player Position Score
 
@@ -27,35 +27,32 @@ newline = char '\n'
 integer :: ReadP Int
 integer = read <$> munch1 isDigit
 
-player :: ReadP String
-player = string "Player "
-
-position :: ReadP String
-position = string " starting position: "
-
-player1 :: ReadP Int
-player1 = player *> char '1' *> position *> integer
-
-player2 :: ReadP Int
-player2 = player *> char '2' *> position *> integer
+player :: Char -> ReadP Int
+player x =
+  string "Player " *> char x *> string " starting position: " *> integer
 
 players :: ReadP (Int, Int)
-players = (,) <$> (player1 <* newline) <*> (player2 <* newline)
+players = (,) <$> (player '1' <* newline) <*> (player '2' <* newline)
 
 parse :: String -> (Int, Int)
 parse = fst . head . readP_to_S (players <* eof)
 
-step :: Position -> Score -> Roll -> (Position, Score)
-step p s n = (p', s + p')
+step :: Position -> Score -> Int -> (Position, Score)
+step p s n = (Position p', Score $ getScore s + p')
   where
-    p' = ((n + p - 1) `mod` 10) + 1
+    p' = ((n + getPosition p - 1) `mod` 10) + 1
 
 part1 :: Int -> Int -> Integer
-part1 l r = toInteger $ s' * length xs * 3
+part1 l r = toInteger $ getScore s' * length xs * 3
   where
     xs =
-      takeWhile (\(_, _, Player _ s) -> s < 1000) $
-        iterate game (cycle [1 .. 100], Player l 0, Player r 0)
+      takeWhile (\(_, _, Player _ s) -> getScore s < 1000) $
+        iterate
+          game
+          ( cycle [1 .. 100],
+            Player (Position l) (Score 0),
+            Player (Position r) (Score 0)
+          )
     (_, _, Player _ s') = last xs
 
     game :: ([Int], Player, Player) -> ([Int], Player, Player)
@@ -76,8 +73,8 @@ memo ::
   Score ->
   (Memo, (Integer, Integer))
 memo m0 p0 p1 s0 s1
-  | 21 <= s0 = (m0, (1, 0))
-  | 21 <= s1 = (m0, (0, 1))
+  | 21 <= getScore s0 = (m0, (1, 0))
+  | 21 <= getScore s1 = (m0, (0, 1))
   | otherwise = case lookup (p0, p1, s0, s1) m0 of
     Just x -> (m0, x)
     Nothing -> (insert (p0, p1, s0, s1) x' m3, x')
@@ -89,7 +86,8 @@ memo m0 p0 p1 s0 s1
     (m3, x') = foldl' f (m0, (0, 0)) dice
 
 part2 :: Int -> Int -> Integer
-part2 l r = uncurry max $ snd $ memo empty l r 0 0
+part2 l r =
+  uncurry max $ snd $ memo empty (Position l) (Position r) (Score 0) (Score 0)
 
 inject :: (Int -> Int -> Integer) -> String -> String
 inject f = show . uncurry f . parse
